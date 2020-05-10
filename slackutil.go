@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/nlopes/slack"
+	"github.com/slack-go/slack"
 )
 
 // SlackRequest wraps http.Request for adding additional convenience methods

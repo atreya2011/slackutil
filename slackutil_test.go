@@ -15,22 +15,20 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/nlopes/slack"
 )
 
 const (
 	signingSecret = "abcd12345"
 )
 
-var sc slack.SlashCommand
-
 func TestParseSlashCommand(t *testing.T) {
 	// this is the json string of the parsed slash command that we want
 	want := `{"token":"tokenish","team_id":"some team id","team_domain":"some team","channel_id":"some channel","channel_name":"random","user_id":"hi","user_name":"bye","command":"/punch","text":"some text","response_url":"","trigger_id":"bam"}`
 	// decode json string to a map of strings
 	var formVal map[string]string
-	json.NewDecoder(strings.NewReader(want)).Decode(&formVal)
+	if err := json.NewDecoder(strings.NewReader(want)).Decode(&formVal); err != nil {
+		t.Fatal(err)
+	}
 	form := &url.Values{}
 	// loop and add them to formVal to be encoded as 'x-www-form-urlencoded'
 	for key := range formVal {
@@ -46,7 +44,9 @@ func TestParseSlashCommand(t *testing.T) {
 	// create mosh hash using slack's receipe
 	hash := hmac.New(sha256.New, []byte(signingSecret))
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	hash.Write([]byte(fmt.Sprintf("v0:%s:%s", timestamp, form.Encode())))
+	if _, err := hash.Write([]byte(fmt.Sprintf("v0:%s:%s", timestamp, form.Encode()))); err != nil {
+		t.Fatal(err)
+	}
 	// set signature using hash
 	req.Header.Set("X-Slack-Signature", "v0="+hex.EncodeToString(hash.Sum(nil)))
 	req.Header.Set("X-Slack-Request-Timestamp", timestamp)
